@@ -17,6 +17,12 @@ public class HelloController {
         return "hola";
     }
 
+    @GetMapping("/error")
+    public String error(Model model){
+        model.addAttribute("mensaje","Tenemos incoveniencias en la pagina, por favor espere");
+        return "error";
+    }
+
 //    @GetMapping("/holamundo")
 //    public Map<String,String> foo(){
 //        Map<String,String> json = new HashMap<>();
