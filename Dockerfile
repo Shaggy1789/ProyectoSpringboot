@@ -8,6 +8,9 @@ COPY gradle/wrapper gradle/wrapper
 COPY build.gradle .
 COPY settings.gradle .
 
+#Damos permisos
+RUN chmod +x gradlew
+
 # Download dependencies (cached layer)
 RUN ./gradlew dependencies --no-daemon
 
