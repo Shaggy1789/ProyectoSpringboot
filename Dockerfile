@@ -1,24 +1,31 @@
-#Build
+# Build stage with cache optimization
 FROM eclipse-temurin:17-jdk AS builder
 WORKDIR /app
 
-#Copiamos todo
-COPY . .
+# Copy build files FIRST for better caching
+COPY gradlew .
+COPY gradle/wrapper gradle/wrapper
+COPY build.gradle .
+COPY settings.gradle .
 
-#Damos permiso y construimos
+# Download dependencies (cached layer)
+RUN ./gradlew dependencies --no-daemon
+
+# Copy source code AFTER
+COPY src src
+
+# Build application (uses cached dependencies)
 RUN ./gradlew clean build --exclude-task test
 
-#Runtime
+# Runtime stage
 FROM eclipse-temurin:17-jre
-
-
 WORKDIR /app
 
-#Copiar Jar
+# Copy JAR
 COPY --from=builder /app/build/libs/*.jar app.jar
 
-#Exponemos el puerto
+# Expose port
 EXPOSE 8080
 
-#Ejecutamos
-ENTRYPOINT ["java", "-jar","app.jar"]
+# Run application
+ENTRYPOINT ["java", "-jar", "app.jar"]
