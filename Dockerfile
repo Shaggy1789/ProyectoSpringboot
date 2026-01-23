@@ -1,5 +1,5 @@
 #Build
-FROM eclipse-termurin:17-jdk AS Builder
+FROM eclipse-temurin:17-jdk AS Builder
 WORKDIR /app
 
 #Copiamos todo
@@ -9,7 +9,7 @@ COPY . .
 RUN chmod +- gradlew && ./gradlew clean build -x test
 
 #Runtime
-From eclipse-termurin:17-jre
+From eclipse-temurin:17-jre
 
 
 WORKDIR /app
