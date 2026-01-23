@@ -9,7 +9,7 @@ COPY . .
 RUN chmod +- gradlew && ./gradlew clean build -x test
 
 #Runtime
-From eclipse-termurin:17-jre-alpine
+From eclipse-termurin:17-jre
 
 
 WORKDIR /app
