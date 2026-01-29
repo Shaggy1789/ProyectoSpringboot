@@ -11,11 +11,6 @@ import java.util.Map;
 @Controller
 public class HelloController {
 
-    @GetMapping("/")
-    public String Index() {
-        return "Login";
-    }
-
     @GetMapping("/holamundo")
     public String holamundo(Model model){
         model.addAttribute("mensaje", "Hola Mundo desde Springboot");

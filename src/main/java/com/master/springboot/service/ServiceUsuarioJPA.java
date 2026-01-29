@@ -1,0 +1,24 @@
+package com.master.springboot.service;
+
+import com.master.springboot.Models.Usuarios;
+import com.master.springboot.Repository.UsuariosRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+
+@Service
+public  class ServiceUsuarioJPA implements ServiceUsuarios {
+
+    @Autowired
+    UsuariosRepository usuariosRepository;
+
+    public List<Usuarios> getUsuarios(){
+        return usuariosRepository.findAll();
+    }
+
+    @Override
+    public List<Usuarios> findAll() {
+        return usuariosRepository.findAll();
+    }
+}

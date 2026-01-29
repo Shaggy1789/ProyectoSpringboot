@@ -28,11 +28,15 @@ dependencies {
 
 	// Source: https://mvnrepository.com/artifact/org.postgresql/postgresql
 	implementation("org.postgresql:postgresql:42.7.8")
-
+	// Source: https://mvnrepository.com/artifact/org.projectlombok/lombok
+	implementation("org.projectlombok:lombok:1.18.42")
+	// Source: https://mvnrepository.com/artifact/org.apache.httpcomponents/httpclient
+	implementation("org.apache.httpcomponents:httpclient:4.5.14")
 	// Utilidades
 	implementation 'commons-io:commons-io:2.13.0'
 	implementation 'org.apache.commons:commons-lang3:3.13.0'
-
+	compileOnly 'org.projectlombok:lombok'
+	annotationProcessor 'org.projectlombok:lombok'
 	// Desarrollo
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'
 

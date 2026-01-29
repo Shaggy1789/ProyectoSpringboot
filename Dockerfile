@@ -18,7 +18,7 @@ RUN ./gradlew dependencies --no-daemon
 COPY src src
 
 # Build application (uses cached dependencies)
-RUN ./gradlew clean build --exclude-task test
+RUN ./gradlew clean build -x test
 
 # Runtime stage
 FROM eclipse-temurin:17-jre
