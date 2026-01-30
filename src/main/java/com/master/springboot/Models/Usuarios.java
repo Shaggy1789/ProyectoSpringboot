@@ -18,7 +18,6 @@ public class Usuarios {
     private String apellidomaterno;
     private String password;
     private int telefono;
-    private int roles;
 
     @ManyToOne
     @JoinColumn(name = "roles")

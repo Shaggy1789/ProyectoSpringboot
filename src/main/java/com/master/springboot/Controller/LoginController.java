@@ -9,7 +9,6 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("api")
 public class LoginController {
 
     @Autowired
@@ -20,7 +19,7 @@ public class LoginController {
 
     @GetMapping("/login")
     public String login(){
-        return "login";
+        return "Login";
     }
 
     @PostMapping("login")
