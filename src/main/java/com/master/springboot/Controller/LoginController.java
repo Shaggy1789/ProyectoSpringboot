@@ -17,13 +17,13 @@ public class LoginController {
     @Autowired
     private AuthCaptchaService authCaptchaService;
 
-    @GetMapping("/login")
-    public String login(){
+    @GetMapping("/Login")
+    public String Login(){
         return "Login";
     }
 
-    @PostMapping("login")
-    public String login(@RequestParam String nombre,@RequestParam String password,@RequestParam("g-recaptcha-response") String recaptchaResponse) {
+    @PostMapping("Login")
+    public String Login(@RequestParam String nombre, @RequestParam String password, @RequestParam("g-recaptcha-response") String recaptchaResponse) {
 
         if(!authCaptchaService.verifyRecaptcha(recaptchaResponse)){
             return "Error: CAPTCHA inválido";
