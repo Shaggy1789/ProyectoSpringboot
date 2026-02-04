@@ -21,4 +21,9 @@ public  class ServiceUsuarioJPA implements ServiceUsuarios {
     public List<Usuarios> findAll() {
         return usuariosRepository.findAll();
     }
+
+    @Override
+    public Usuarios save(Usuarios nuevoUsuario) {
+        return usuariosRepository.save(nuevoUsuario);
+    }
 }
