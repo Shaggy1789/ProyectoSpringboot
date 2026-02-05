@@ -4,6 +4,8 @@ import com.master.springboot.Models.Roles;
 import com.master.springboot.Models.Usuarios;
 import com.master.springboot.service.AuthCaptchaService;
 import com.master.springboot.service.ServiceUsuarios;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -42,23 +44,53 @@ public class LoginController {
 
         return "login"; // Renderiza login.html
     }
+    //Cerrar sesion
+    @GetMapping("/logout")
+    public String logout(HttpSession session, RedirectAttributes redirectAttributes){
+        session.invalidate();
+        redirectAttributes.addFlashAttribute("mensajeLogout", "Adiooos :D");
+        return "redirect:/login";
+    }
 
+    //Registro
     @GetMapping("/registro")
     public String mostrarRegistro(Model model){
         model.addAttribute("titulo", "Registro de Usuarios");
         return "registro"; // Renderiza registro.html
     }
-
+    //Index
     @GetMapping("/dashboard")
     public String mostrarDashboard(Model model){
         model.addAttribute("titulo", "Dashboard");
         return "dashboard"; // Renderiza dashboard.html
     }
-
     @GetMapping("/error")
-    public String mostrarError(Model model){
-        model.addAttribute("mensaje","Tenemos inconveniencias en la página, por favor espere");
-        return "error"; // Renderiza error.html
+    public String mostrarError(
+            @RequestParam(required = false) String origen,
+            @RequestParam(required = false) String mensaje,
+            HttpServletRequest request,
+            Model model
+    ) {
+        if (origen == null || origen.isEmpty()) {
+            String refer = request.getHeader("referer");
+            if (refer == null || refer.isEmpty()) {
+                if (refer.contains("/login")) {
+                    origen = "login";
+                } else if (refer.contains("registro")) {
+                    origen = "registro";
+                } else if (refer.contains("/dashboard")) {
+                    origen = "dashboard";
+                } else {
+                    origen = "login";
+                }
+            }else{
+                origen = "login";
+            }
+        }
+        model.addAttribute("origen", origen);
+        model.addAttribute("mensaje", mensaje != null ? mensaje : "Algo inesperado ocurrió. ¡No te preocupes!");
+        model.addAttribute("titulo","¡Oops! Algo salió mal");
+        return "error";
     }
 
     @GetMapping("/holamundo")
@@ -66,6 +98,7 @@ public class LoginController {
         model.addAttribute("mensaje", "Hola Mundo desde Springboot");
         return "hola"; // Renderiza hola.html
     }
+    
 
     // ========== MÉTODOS POST (PARA PROCESAR FORMULARIOS) ==========
 

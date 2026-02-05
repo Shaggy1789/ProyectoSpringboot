@@ -18,4 +18,8 @@ public class UsuariosController {
         return serviceUsuarios.findAll();
     }
 
+    @GetMapping("/api/guardarusuario"){
+        public
+    }
+
 }
