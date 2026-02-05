@@ -44,9 +44,10 @@ public class LoginController {
 
         return "login"; // Renderiza login.html
     }
+
     //Cerrar sesion
     @GetMapping("/logout")
-    public String logout(HttpSession session, RedirectAttributes redirectAttributes){
+    public String logout(HttpSession session, RedirectAttributes redirectAttributes) {
         session.invalidate();
         redirectAttributes.addFlashAttribute("mensajeLogout", "Adiooos :D");
         return "redirect:/login";
@@ -54,16 +55,18 @@ public class LoginController {
 
     //Registro
     @GetMapping("/registro")
-    public String mostrarRegistro(Model model){
+    public String mostrarRegistro(Model model) {
         model.addAttribute("titulo", "Registro de Usuarios");
         return "registro"; // Renderiza registro.html
     }
+
     //Index
     @GetMapping("/dashboard")
-    public String mostrarDashboard(Model model){
+    public String mostrarDashboard(Model model) {
         model.addAttribute("titulo", "Dashboard");
         return "dashboard"; // Renderiza dashboard.html
     }
+
     @GetMapping("/error")
     public String mostrarError(
             @RequestParam(required = false) String origen,
@@ -83,22 +86,22 @@ public class LoginController {
                 } else {
                     origen = "login";
                 }
-            }else{
+            } else {
                 origen = "login";
             }
         }
         model.addAttribute("origen", origen);
         model.addAttribute("mensaje", mensaje != null ? mensaje : "Algo inesperado ocurrió. ¡No te preocupes!");
-        model.addAttribute("titulo","¡Oops! Algo salió mal");
+        model.addAttribute("titulo", "¡Oops! Algo salió mal");
         return "error";
     }
 
     @GetMapping("/holamundo")
-    public String holamundo(Model model){
+    public String holamundo(Model model) {
         model.addAttribute("mensaje", "Hola Mundo desde Springboot");
         return "hola"; // Renderiza hola.html
     }
-    
+
 
     // ========== MÉTODOS POST (PARA PROCESAR FORMULARIOS) ==========
 
@@ -110,7 +113,7 @@ public class LoginController {
             RedirectAttributes redirectAttributes) {
 
         // Validar CAPTCHA
-        if(!authCaptchaService.verifyRecaptcha(recaptchaResponse)){
+        if (!authCaptchaService.verifyRecaptcha(recaptchaResponse)) {
             redirectAttributes.addAttribute("error", "captcha");
             return "redirect:/login?error=captcha";
         }
@@ -150,8 +153,8 @@ public class LoginController {
             RedirectAttributes redirectAttributes) {
 
         // Validar CAPTCHA
-        if(!authCaptchaService.verifyRecaptcha(recaptchaResponse)){
-            model.addAttribute("Error","CAPTCHA inválido, por favor trata de nuevo");
+        if (!authCaptchaService.verifyRecaptcha(recaptchaResponse)) {
+            model.addAttribute("Error", "CAPTCHA inválido, por favor trata de nuevo");
             return "registro";
         }
 
@@ -159,7 +162,7 @@ public class LoginController {
         List<Usuarios> usuarios = serviceUsuarios.findAll();
         for (Usuarios usuario : usuarios) {
             if (usuario.getNombre().equals(nombre)) {
-                model.addAttribute("Error","El usuario ya existe");
+                model.addAttribute("Error", "El usuario ya existe");
                 return "registro";
             }
         }
