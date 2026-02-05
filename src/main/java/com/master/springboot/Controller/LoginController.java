@@ -102,7 +102,7 @@ public class LoginController {
 
     // ========== MÉTODOS POST (PARA PROCESAR FORMULARIOS) ==========
 
-    @PostMapping("/login")
+    @PostMapping("/Login")
     public String procesarLogin(
             @RequestParam String nombre,
             @RequestParam String password,
