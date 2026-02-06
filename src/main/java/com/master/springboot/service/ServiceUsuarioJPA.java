@@ -13,10 +13,6 @@ public  class ServiceUsuarioJPA implements ServiceUsuarios {
     @Autowired
     UsuariosRepository usuariosRepository;
 
-    public List<Usuarios> getUsuarios(){
-        return usuariosRepository.findAll();
-    }
-
     @Override
     public List<Usuarios> findAll() {
         return usuariosRepository.findAll();
