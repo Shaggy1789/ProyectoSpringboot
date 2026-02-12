@@ -173,7 +173,7 @@ public class LoginController {
             nuevoUsuario.setNombre(nombre);
             nuevoUsuario.setApellidopaterno(apellidopaterno);
             nuevoUsuario.setApellidomaterno(apellidomaterno);
-            nuevoUsuario.setEmail(email); // Nota: Tu modelo Usuarios no tiene campo email, ¿necesitas agregarlo?
+            nuevoUsuario.setEmail(email);
             nuevoUsuario.setPassword(md5(password));
             nuevoUsuario.setTelefono(telefono);
 

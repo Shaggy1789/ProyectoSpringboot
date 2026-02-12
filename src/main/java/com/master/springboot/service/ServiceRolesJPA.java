@@ -15,7 +15,7 @@ public class ServiceRolesJPA implements  ServiceRoles {
 
     @Override
     public List<Roles> findAll() {
-        return List.of();
+        return rolesRepository.findAll();
     }
 
     @Override
