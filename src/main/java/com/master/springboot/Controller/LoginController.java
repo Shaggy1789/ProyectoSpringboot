@@ -121,7 +121,7 @@ public class LoginController {
         List<Usuarios> usuarios = serviceUsuarios.findAll();
 
         for (Usuarios usuario : usuarios) {
-            if (usuario.getNombre().equals(nombre)) {
+            if (usuario.getNombreusuario().equals(nombre)) {
                 String hashedPassword = md5(password);
 
                 if (usuario.getPassword() != null &&
@@ -161,7 +161,7 @@ public class LoginController {
         // Verificar si el usuario ya existe
         List<Usuarios> usuarios = serviceUsuarios.findAll();
         for (Usuarios usuario : usuarios) {
-            if (usuario.getNombre().equals(nombre)) {
+            if (usuario.getNombreusuario().equals(nombre)) {
                 model.addAttribute("Error", "El usuario ya existe");
                 return "registro";
             }
@@ -170,7 +170,7 @@ public class LoginController {
         try {
             Usuarios nuevoUsuario = new Usuarios();
 
-            nuevoUsuario.setNombre(nombre);
+            nuevoUsuario.setNombreusuario(nombre);
             nuevoUsuario.setApellidopaterno(apellidopaterno);
             nuevoUsuario.setApellidomaterno(apellidomaterno);
             nuevoUsuario.setEmail(email);

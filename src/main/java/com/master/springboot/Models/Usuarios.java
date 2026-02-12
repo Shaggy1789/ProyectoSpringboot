@@ -13,7 +13,7 @@ import lombok.*;
 public class Usuarios {
     @Id
     private int idusuario;
-    private String nombre;
+    private String nombreusuario;
     private String apellidopaterno;
     private String apellidomaterno;
     private String email;
