@@ -61,7 +61,7 @@ public class LoginController {
     }
 
     //Index
-    @GetMapping("/dashboard")
+    @GetMapping("/")
     public String mostrarDashboard(Model model) {
         model.addAttribute("titulo", "Dashboard");
         return "dashboard"; // Renderiza dashboard.html
