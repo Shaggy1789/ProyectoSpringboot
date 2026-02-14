@@ -19,7 +19,13 @@ public  class ServiceUsuarioJPA implements ServiceUsuarios {
     }
 
     @Override
+    public Usuarios findById(int id) {
+        return usuariosRepository.findById(id).get();
+    }
+
+    @Override
     public Usuarios save(Usuarios nuevoUsuario) {
         return usuariosRepository.save(nuevoUsuario);
     }
+
 }

@@ -4,17 +4,18 @@ import com.master.springboot.Models.Roles;
 import com.master.springboot.Models.Usuarios;
 import com.master.springboot.service.AuthCaptchaService;
 import com.master.springboot.service.ServiceUsuarios;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
-@Controller
+@RestController
+@RequestMapping("/api")
 public class LoginController {
 
     @Autowired
@@ -23,99 +24,23 @@ public class LoginController {
     @Autowired
     private AuthCaptchaService authCaptchaService;
 
-    // ========== MÉTODOS GET (PARA MOSTRAR PÁGINAS) ==========
-
-    @GetMapping("/login")
-    public String mostrarLogin(Model model,
-                               @RequestParam(required = false) String error,
-                               @RequestParam(required = false) String registro,
-                               @RequestParam(required = false) String usuario) {
-        model.addAttribute("titulo", "Inicio de Sesión");
-
-        if (error != null) {
-            model.addAttribute("error", "Error en el inicio de sesión");
-        }
-        if (registro != null && registro.equals("exitoso")) {
-            model.addAttribute("mensajeExito", "¡Registro exitoso! Ahora puedes iniciar sesión.");
-        }
-        if (usuario != null) {
-            model.addAttribute("usuarioRegistrado", usuario);
-        }
-
-        return "login"; // Renderiza login.html
-    }
-
-    //Cerrar sesion
-    @GetMapping("/logout")
-    public String logout(HttpSession session, RedirectAttributes redirectAttributes) {
-        session.invalidate();
-        redirectAttributes.addFlashAttribute("mensajeLogout", "Adiooos :D");
-        return "redirect:/login";
-    }
-
-    //Registro
-    @GetMapping("/registro")
-    public String mostrarRegistro(Model model) {
-        model.addAttribute("titulo", "Registro de Usuarios");
-        return "registro"; // Renderiza registro.html
-    }
-
-    //Index
-    @GetMapping("/")
-    public String mostrarDashboard(Model model) {
-        model.addAttribute("titulo", "Dashboard");
-        return "dashboard"; // Renderiza dashboard.html
-    }
-
-    @GetMapping("/error")
-    public String mostrarError(
-            @RequestParam(required = false) String origen,
-            @RequestParam(required = false) String mensaje,
-            HttpServletRequest request,
-            Model model
-    ) {
-        if (origen == null || origen.isEmpty()) {
-            String refer = request.getHeader("referer");
-            if (refer == null || refer.isEmpty()) {
-                if (refer.contains("/login")) {
-                    origen = "login";
-                } else if (refer.contains("registro")) {
-                    origen = "registro";
-                } else if (refer.contains("/dashboard")) {
-                    origen = "dashboard";
-                } else {
-                    origen = "login";
-                }
-            } else {
-                origen = "login";
-            }
-        }
-        model.addAttribute("origen", origen);
-        model.addAttribute("mensaje", mensaje != null ? mensaje : "Algo inesperado ocurrió. ¡No te preocupes!");
-        model.addAttribute("titulo", "¡Oops! Algo salió mal");
-        return "error";
-    }
-
-    @GetMapping("/holamundo")
-    public String holamundo(Model model) {
-        model.addAttribute("mensaje", "Hola Mundo desde Springboot");
-        return "hola"; // Renderiza hola.html
-    }
-
-
     // ========== MÉTODOS POST (PARA PROCESAR FORMULARIOS) ==========
 
     @PostMapping("/login")
-    public String procesarLogin(
+    public ResponseEntity<?> procesarLogin(
             @RequestParam String nombre,
             @RequestParam String password,
             @RequestParam("g-recaptcha-response") String recaptchaResponse,
-            RedirectAttributes redirectAttributes) {
+            HttpSession session) {
+
+        Map<String, Object> response = new HashMap<>();
 
         // Validar CAPTCHA
         if (!authCaptchaService.verifyRecaptcha(recaptchaResponse)) {
-            redirectAttributes.addAttribute("error", "captcha");
-            return "redirect:/login?error=captcha";
+            response.put("success", false);
+            response.put("message", "Error en el inicio de sesión");
+            response.put("error", "captcha");
+            return ResponseEntity.badRequest().body(response);
         }
 
         List<Usuarios> usuarios = serviceUsuarios.findAll();
@@ -127,43 +52,57 @@ public class LoginController {
                 if (usuario.getPassword() != null &&
                         usuario.getPassword().equals(hashedPassword)) {
 
-                    // Redirigir al dashboard si el login es exitoso
-                    return "redirect:/dashboard";
+                    // Guardar usuario en sesión
+                    session.setAttribute("usuario", usuario);
+
+                    response.put("success", true);
+                    response.put("message", "Login exitoso");
+                    response.put("redirect", "/dashboard");
+                    response.put("usuario", usuario);
+                    return ResponseEntity.ok(response);
                 } else {
-                    redirectAttributes.addAttribute("error", "password");
-                    return "redirect:/login?error=password";
+                    response.put("success", false);
+                    response.put("message", "Error en el inicio de sesión");
+                    response.put("error", "password");
+                    return ResponseEntity.badRequest().body(response);
                 }
             }
         }
 
-        redirectAttributes.addAttribute("error", "usuario");
-        return "redirect:/login?error=usuario";
+        response.put("success", false);
+        response.put("message", "Error en el inicio de sesión");
+        response.put("error", "usuario");
+        return ResponseEntity.badRequest().body(response);
     }
 
     @PostMapping("/registro")
-    public String procesarRegistro(
+    public ResponseEntity<?> procesarRegistro(
             @RequestParam String nombre,
             @RequestParam String apellidopaterno,
             @RequestParam String apellidomaterno,
             @RequestParam String email,
             @RequestParam String password,
             @RequestParam int telefono,
-            @RequestParam("g-recaptcha-response") String recaptchaResponse,
-            Model model,
-            RedirectAttributes redirectAttributes) {
+            @RequestParam("g-recaptcha-response") String recaptchaResponse) {
+
+        Map<String, Object> response = new HashMap<>();
 
         // Validar CAPTCHA
         if (!authCaptchaService.verifyRecaptcha(recaptchaResponse)) {
-            model.addAttribute("Error", "CAPTCHA inválido, por favor trata de nuevo");
-            return "registro";
+            response.put("success", false);
+            response.put("message", "CAPTCHA inválido, por favor trata de nuevo");
+            response.put("error", "captcha");
+            return ResponseEntity.badRequest().body(response);
         }
 
         // Verificar si el usuario ya existe
         List<Usuarios> usuarios = serviceUsuarios.findAll();
         for (Usuarios usuario : usuarios) {
             if (usuario.getNombreusuario().equals(nombre)) {
-                model.addAttribute("Error", "El usuario ya existe");
-                return "registro";
+                response.put("success", false);
+                response.put("message", "El usuario ya existe");
+                response.put("error", "usuario_existente");
+                return ResponseEntity.badRequest().body(response);
             }
         }
 
@@ -185,16 +124,47 @@ public class LoginController {
             // Guardar el usuario
             serviceUsuarios.save(nuevoUsuario);
 
-            // Redirigir al login con mensaje de éxito
-            redirectAttributes.addAttribute("registro", "exitoso");
-            redirectAttributes.addAttribute("usuario", nombre);
-            return "redirect:/login";
+            response.put("success", true);
+            response.put("message", "¡Registro exitoso! Ahora puedes iniciar sesión.");
+            response.put("redirect", "/login");
+            response.put("registro", "exitoso");
+            response.put("usuario", nombre);
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
 
         } catch (Exception e) {
             e.printStackTrace();
-            model.addAttribute("Error", "Error al registrar: " + e.getMessage());
-            return "registro";
+            response.put("success", false);
+            response.put("message", "Error al registrar: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout(HttpSession session) {
+        session.invalidate();
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("message", "Adiooos :D");
+        response.put("redirect", "/login");
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/sesion")
+    public ResponseEntity<?> obtenerSesion(HttpSession session) {
+        Map<String, Object> response = new HashMap<>();
+        Usuarios usuario = (Usuarios) session.getAttribute("usuario");
+
+        if (usuario != null) {
+            response.put("success", true);
+            response.put("usuario", usuario);
+            response.put("autenticado", true);
+            response.put("mensaje", "Sesión activa");
+        } else {
+            response.put("success", true);
+            response.put("autenticado", false);
+            response.put("mensaje", "No hay sesión activa");
+        }
+        return ResponseEntity.ok(response);
     }
 
     // ========== MÉTODO AUXILIAR ==========
