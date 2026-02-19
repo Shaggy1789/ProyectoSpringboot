@@ -37,6 +37,8 @@ dependencies {
 	implementation 'org.apache.commons:commons-lang3:3.13.0'
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'
+	// Source: https://mvnrepository.com/artifact/com.google.guava/guava
+	implementation("com.google.guava:guava:33.5.0-jre")
 	// Desarrollo
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'
 

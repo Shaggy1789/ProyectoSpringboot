@@ -8,9 +8,10 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Google reCAPTCHA Enterprise -->
-    <script src="https://www.google.com/recaptcha/enterprise.js?render=6LeLL2gsAAAAAHH367hTR4_ApAJRG3pEb3hAQ9Zv"></script>
+    <!-- reCAPTCHA v3 - MISMA SITE KEY DEL REGISTRO -->
+    <script src="https://www.google.com/recaptcha/api.js?render=6LdJmHAsAAAAAIxiOLPzSMjlUdd_S_PLSDqg1hbq"></script>
     <style>
+        /* Tus estilos existentes - IGUALES */
         body {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
@@ -107,9 +108,6 @@
             background-color: #d1fae5;
             color: #059669;
         }
-        .g-recaptcha {
-            margin: 1.5rem 0;
-        }
         .register-link {
             text-align: center;
             margin-top: 1.5rem;
@@ -181,7 +179,7 @@
                             <span class="input-group-text">
                                 <i class="fas fa-user"></i>
                             </span>
-                        <input type="text" name="nombre" class="form-control"
+                        <input type="text" name="nombreusuario" class="form-control"
                                placeholder="Ingresa tu usuario" required
                                th:value="${param.nombreusuario}">
                     </div>
@@ -199,21 +197,10 @@
                     </div>
                 </div>
 
-                <!-- Input hidden para el token de reCAPTCHA -->
+                <!-- Campo oculto para token de reCAPTCHA v3 -->
                 <input type="hidden" name="g-recaptcha-response" id="recaptchaToken">
 
-                <!-- reCAPTCHA Enterprise -->
-                <div class="mb-4">
-                    <button class="g-recaptcha"
-                            data-sitekey="6LeLL2gsAAAAAHH367hTR4_ApAJRG3pEb3hAQ9Zv"
-                            data-callback='onSubmit'
-                            data-action='submit'
-                            style="width: 100%; padding: 15px; background: linear-gradient(90deg, #4f46e5, #7c3aed); border: none; border-radius: 12px; color: white; font-weight: 700; font-size: 1.1rem;">
-                        <i class="fas fa-shield-alt me-2"></i>Verificar con reCAPTCHA
-                    </button>
-                </div>
-
-                <button type="submit" class="btn-login mb-3">
+                <button type="submit" class="btn-login mb-3" id="submitBtn">
                     <i class="fas fa-sign-in-alt me-2"></i>Iniciar Sesión
                 </button>
 
@@ -233,21 +220,65 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
-    // Función de callback para reCAPTCHA
-    function onSubmit(token) {
-        document.getElementById('recaptchaToken').value = token;
-        document.getElementById('loginForm').submit();
-    }
-
-    // Validar el formulario antes de enviar
     document.getElementById('loginForm').addEventListener('submit', function(e) {
-        const token = document.getElementById('recaptchaToken').value;
-
-        // Si no hay token, prevenir el envío y dejar que reCAPTCHA lo maneje
-        if (!token) {
-            e.preventDefault();
-            // reCAPTCHA ejecutará el callback automáticamente
-        }
+        e.preventDefault();
+        
+        console.log('1. Iniciando proceso de login...');
+        
+        // Ejecutar reCAPTCHA
+        grecaptcha.ready(function() {
+            console.log('2. reCAPTCHA ready');
+            
+            grecaptcha.execute('6LdJmHAsAAAAAIxiOLPzSMjlUdd_S_PLSDqg1hbq', {action: 'login'})
+            .then(function(token) {
+                console.log('3. Token generado, longitud:', token.length);
+                
+                document.getElementById('recaptchaToken').value = token;
+                
+                // Crear FormData
+                const formData = new FormData(document.getElementById('loginForm'));
+                
+                // Mostrar los datos que se envían
+                console.log('4. Datos del formulario:');
+                for (let pair of formData.entries()) {
+                    console.log(pair[0] + ': ' + pair[1].substring(0, 50) + '...');
+                }
+                
+                // Enviar con fetch
+                fetch('/api/login', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => {
+                    console.log('5. Respuesta recibida, status:', response.status);
+                    console.log('5. Headers:', response.headers.get('content-type'));
+                    
+                    if (!response.ok) {
+                        throw new Error('HTTP error! status: ' + response.status);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('6. Datos JSON:', data);
+                    
+                    if (data.success) {
+                        console.log('7. Login exitoso, redirigiendo a:', data.redirect);
+                        window.location.href = data.redirect || '/dashboard';
+                    } else {
+                        console.log('7. Login falló:', data.message);
+                        alert(data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('8. Error en fetch:', error);
+                    alert('Error en la comunicación con el servidor. Mira la consola (F12) para más detalles.');
+                });
+            })
+            .catch(function(error) {
+                console.error('Error en reCAPTCHA:', error);
+                alert('Error con reCAPTCHA');
+            });
+        });
     });
 </script>
 </body>

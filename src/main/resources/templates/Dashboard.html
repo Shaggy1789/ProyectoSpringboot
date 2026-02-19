@@ -317,6 +317,11 @@
                         <i class="fas fa-globe"></i> Hola Mundo
                     </a>
                 </li>
+                <li class="nav-item">
+                    <a class="nav-link" th:href="@{/usuarios}">
+                        <i class="fa-solid fa-circle-user"></i>Usuarios
+                    </a>
+                </li>
             </ul>
 
             <ul class="navbar-nav">
@@ -329,7 +334,7 @@
                     </div>
                 </li>
                 <li class="nav-item" th:if="${session.usuario != null}">
-                    <a class="btn-login-nav" th:href="@{/dashboard}">
+                    <a class="btn-login-nav" th:href="@{/}">
                         <i class="fas fa-tachometer-alt"></i> Dashboard
                     </a>
                 </li>

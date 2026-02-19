@@ -26,7 +26,7 @@ public class UsuariosController {
         return serviceUsuarios.findAll();
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("api/usuario/{id}")
     public Usuarios ObtenerPorId(@PathVariable int id){
         return serviceUsuarios.findById(id);
     }

@@ -8,6 +8,7 @@ import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -28,39 +29,64 @@ public class LoginController {
 
     @PostMapping("/login")
     public ResponseEntity<?> procesarLogin(
-            @RequestParam String nombre,
+            @RequestParam String nombreusuario,
             @RequestParam String password,
             @RequestParam("g-recaptcha-response") String recaptchaResponse,
             HttpSession session) {
 
         Map<String, Object> response = new HashMap<>();
 
+        System.out.println("=== PROCESANDO LOGIN ===");
+        System.out.println("Usuario: " + nombreusuario);
+        System.out.println("Password: " + password);
+        System.out.println("Token CAPTCHA length: " + (recaptchaResponse != null ? recaptchaResponse.length() : 0));
+
         // Validar CAPTCHA
         if (!authCaptchaService.verifyRecaptcha(recaptchaResponse)) {
+            System.out.println("❌ CAPTCHA inválido");
             response.put("success", false);
             response.put("message", "Error en el inicio de sesión");
             response.put("error", "captcha");
             return ResponseEntity.badRequest().body(response);
         }
+        System.out.println("✅ CAPTCHA válido");
 
+        // Buscar usuario
         List<Usuarios> usuarios = serviceUsuarios.findAll();
+        System.out.println("Total usuarios en BD: " + usuarios.size());
 
         for (Usuarios usuario : usuarios) {
-            if (usuario.getNombreusuario().equals(nombre)) {
+            System.out.println("Comparando con: " + usuario.getNombreusuario());
+
+            if (usuario.getNombreusuario().equals(nombreusuario)) {
+                System.out.println("✓ Usuario encontrado");
+
                 String hashedPassword = md5(password);
+                System.out.println("Hash ingresado: " + hashedPassword);
+                System.out.println("Hash en BD: " + usuario.getPassword());
 
                 if (usuario.getPassword() != null &&
                         usuario.getPassword().equals(hashedPassword)) {
+
+                    System.out.println("✓ Contraseña correcta");
 
                     // Guardar usuario en sesión
                     session.setAttribute("usuario", usuario);
 
                     response.put("success", true);
                     response.put("message", "Login exitoso");
-                    response.put("redirect", "/dashboard");
-                    response.put("usuario", usuario);
+                    response.put("redirect", "/");
+
+                    // Devolver solo datos básicos del usuario
+                    Map<String, Object> datosUsuario = new HashMap<>();
+                    datosUsuario.put("id", usuario.getIdusuario());
+                    datosUsuario.put("nombre", usuario.getNombreusuario());
+                    datosUsuario.put("email", usuario.getEmail());
+                    response.put("usuario", datosUsuario);
+
                     return ResponseEntity.ok(response);
                 } else {
+                    System.out.println("❌ Contraseña incorrecta");
                     response.put("success", false);
                     response.put("message", "Error en el inicio de sesión");
                     response.put("error", "password");
@@ -69,6 +95,7 @@ public class LoginController {
             }
         }
 
+        System.out.println("❌ Usuario no encontrado");
         response.put("success", false);
         response.put("message", "Error en el inicio de sesión");
         response.put("error", "usuario");
@@ -82,13 +109,21 @@ public class LoginController {
             @RequestParam String apellidomaterno,
             @RequestParam String email,
             @RequestParam String password,
-            @RequestParam int telefono,
+            @RequestParam long telefono,
             @RequestParam("g-recaptcha-response") String recaptchaResponse) {
 
         Map<String, Object> response = new HashMap<>();
 
+        System.out.println("\n=== PROCESANDO REGISTRO ===");
+        System.out.println("Token recibido en controller (primeros 50): " +
+                (recaptchaResponse != null ? recaptchaResponse.substring(0, Math.min(50, recaptchaResponse.length())) : "null"));
+        System.out.println("Longitud token: " + (recaptchaResponse != null ? recaptchaResponse.length() : 0));
+
         // Validar CAPTCHA
-        if (!authCaptchaService.verifyRecaptcha(recaptchaResponse)) {
+        boolean captchaValido = authCaptchaService.verifyRecaptcha(recaptchaResponse);
+        System.out.println("Resultado validación CAPTCHA: " + captchaValido);
+
+        if (!captchaValido) {
             response.put("success", false);
             response.put("message", "CAPTCHA inválido, por favor trata de nuevo");
             response.put("error", "captcha");

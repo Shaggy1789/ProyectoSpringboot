@@ -2,11 +2,13 @@ package com.master.springboot.Controller;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
+import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+@Controller
 public class HomeController {
     @GetMapping("/login")
     public String mostrarLogin(Model model,
@@ -34,6 +36,11 @@ public class HomeController {
         return "dashboard"; // Renderiza dashboard.html
     }
 
+    @GetMapping("/usuarios")
+    public String mostrarUsuarios(Model model) {
+        model.addAttribute("titulo", "Usuarios");
+        return "usuarios";
+    }
 
     @GetMapping("/error")
     public String mostrarError(
@@ -44,7 +51,9 @@ public class HomeController {
     ) {
         if (origen == null || origen.isEmpty()) {
             String refer = request.getHeader("referer");
-            if (refer == null || refer.isEmpty()) {
+            if (refer == null) {  // ← CORREGIDO
+                origen = "login";
+            } else if (refer.isEmpty()) {  // ← CORREGIDO
                 if (refer.contains("/login")) {
                     origen = "login";
                 } else if (refer.contains("registro")) {
