@@ -243,16 +243,76 @@
             transform: translateY(-2px);
         }
         
-        .paginacion-info {
-            color: #64748b;
-            font-size: 0.9rem;
-        }
-        
         .total-usuarios {
             background: rgba(255, 255, 255, 0.2);
             padding: 5px 15px;
             border-radius: 20px;
             font-size: 0.9rem;
+        }
+        
+        .modal-content {
+            border-radius: 20px;
+            border: none;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+        
+        .modal-header {
+            background: linear-gradient(90deg, #4f46e5, #7c3aed);
+            color: white;
+            border-radius: 20px 20px 0 0;
+            padding: 1.5rem;
+            border: none;
+        }
+        
+        .modal-header .btn-close {
+            filter: brightness(0) invert(1);
+        }
+        
+        .modal-body {
+            padding: 2rem;
+        }
+        
+        .modal-footer {
+            border-top: 2px solid #e2e8f0;
+            padding: 1.5rem;
+        }
+        
+        .password-input-group {
+            position: relative;
+        }
+        
+        .toggle-password {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: #64748b;
+        }
+        
+        .toggle-password:hover {
+            color: #4f46e5;
+        }
+        
+        .is-invalid {
+            border-color: #dc3545 !important;
+        }
+        
+        .is-valid {
+            border-color: #198754 !important;
+        }
+        
+        .invalid-feedback {
+            color: #dc3545;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+            display: block;
+        }
+        
+        #telefono::-webkit-outer-spin-button,
+        #telefono::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
         }
         
         @media (max-width: 768px) {
@@ -262,9 +322,6 @@
             .navbar-custom {
                 padding: 1rem;
             }
-            .navbar-custom .navbar-brand span {
-                display: none;
-            }
             .card-header-custom {
                 flex-direction: column;
                 gap: 15px;
@@ -273,48 +330,25 @@
     </style>
 </head>
 <body>
-    <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-custom">
         <div class="container-fluid">
-            <a class="navbar-brand" th:href="@{/dashboard}">
+            <a class="navbar-brand" href="/">
                 <i class="fas fa-lock"></i>
                 <span>Mi Aplicación</span>
             </a>
-            
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon" style="filter: invert(1);"></span>
             </button>
-            
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
-                        <a class="nav-link" th:href="@{/dashboard}">
-                            <i class="fas fa-home"></i> Dashboard
+                        <a class="nav-link" href="/">
+                            <i class="fas fa-home"></i> Inicio
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link active" th:href="@{/admin/usuarios}">
+                        <a class="nav-link active" href="/admin/usuarios">
                             <i class="fas fa-users"></i> Usuarios
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" th:href="@{/holamundo}">
-                            <i class="fas fa-globe"></i> Hola Mundo
-                        </a>
-                    </li>
-                </ul>
-                
-                <ul class="navbar-nav">
-                    <li class="nav-item" th:if="${session.usuario != null}">
-                        <div class="user-info">
-                            <i class="fas fa-user-circle"></i>
-                            <span th:text="${session.usuario.nombreusuario}">Admin</span>
-                            <span class="badge bg-light text-dark" th:text="${session.usuario.role.nombre}">Administrador</span>
-                        </div>
-                    </li>
-                    <li class="nav-item" th:if="${session.usuario != null}">
-                        <a class="btn-login-nav" th:href="@{/logout}">
-                            <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
                         </a>
                     </li>
                 </ul>
@@ -323,7 +357,6 @@
     </nav>
     
     <div class="admin-container">
-        <!-- Tarjeta principal -->
         <div class="admin-card">
             <div class="card-header-custom">
                 <h2>
@@ -331,174 +364,614 @@
                     Gestión de Usuarios
                 </h2>
                 <div class="d-flex gap-3 align-items-center">
-                    <span class="total-usuarios">
+                    <span class="total-usuarios" id="totalUsuarios">
                         <i class="fas fa-database me-2"></i>
-                        Total: <span th:text="${totalUsuarios}">0</span> usuarios
+                        Total: <span id="totalCount">0</span> usuarios
                     </span>
-                    <a th:href="@{/registro}" class="btn-custom">
+                    <button class="btn-custom" onclick="abrirModalNuevo()">
                         <i class="fas fa-user-plus"></i> Nuevo Usuario
-                    </a>
+                    </button>
                 </div>
             </div>
             
-            <!-- FILTROS - Se envían al controlador -->
-            <form th:action="@{/admin/usuarios}" method="get" class="filtros-card">
+            <div class="filtros-card">
                 <div class="row g-3">
                     <div class="col-md-4">
                         <label class="form-label fw-bold text-muted">
                             <i class="fas fa-search me-2"></i>Buscar
                         </label>
-                        <input type="text" name="buscar" class="form-control" 
-                               placeholder="Nombre, email o teléfono..." 
-                               th:value="${param.buscar}">
+                        <input type="text" id="buscarInput" class="form-control" 
+                               placeholder="Nombre, email o teléfono...">
                     </div>
-                    
                     <div class="col-md-3">
                         <label class="form-label fw-bold text-muted">
                             <i class="fas fa-filter me-2"></i>Rol
                         </label>
-                        <select name="rol" class="form-select">
+                        <select id="rolSelect" class="form-select">
                             <option value="">Todos los roles</option>
-                            <option value="1" th:selected="${param.rol == '1'}">Administrador</option>
-                            <option value="2" th:selected="${param.rol == '2'}">Usuario</option>
                         </select>
                     </div>
-                    
-                    <div class="col-md-3">
-                        <label class="form-label fw-bold text-muted">
-                            <i class="fas fa-sort me-2"></i>Ordenar por
-                        </label>
-                        <select name="orden" class="form-select">
-                            <option value="id" th:selected="${param.orden == 'id'}">ID</option>
-                            <option value="nombre" th:selected="${param.orden == 'nombre'}">Usuario</option>
-                            <option value="email" th:selected="${param.orden == 'email'}">Email</option>
-                            <option value="rol" th:selected="${param.orden == 'rol'}">Rol</option>
-                        </select>
-                    </div>
-                    
                     <div class="col-md-2 d-flex align-items-end">
-                        <button type="submit" class="btn-primary-custom w-100">
+                        <button id="filtrarBtn" class="btn-primary-custom w-100">
                             <i class="fas fa-filter me-2"></i>Filtrar
                         </button>
                     </div>
                 </div>
-                
-                <!-- Botón para limpiar filtros -->
-                <div class="text-end mt-3" th:if="${param.buscar != null or param.rol != null or param.orden != null}">
-                    <a th:href="@{/admin/usuarios}" class="btn btn-outline-secondary btn-sm">
-                        <i class="fas fa-times-circle me-1"></i>Limpiar filtros
-                    </a>
-                </div>
-            </form>
+            </div>
             
-            <!-- TABLA DE USUARIOS - DATOS REALES DESDE BD -->
             <div class="table-responsive">
                 <table class="table table-custom">
                     <thead>
                         <tr>
                             <th>ID</th>
                             <th>Usuario</th>
-                            <th>Nombre Completo</th>
+                            <th>Apellidos</th>
                             <th>Email</th>
                             <th>Teléfono</th>
                             <th>Rol</th>
                             <th>Acciones</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        <tr th:each="usuario : ${usuarios}" th:unless="${usuarios == null or usuarios.isEmpty()}">
-                            <td class="fw-bold" th:text="${usuario.idusuario}">1</td>
-                            <td>
-                                <i class="fas fa-user-circle me-2" style="color: #4f46e5;"></i>
-                                <span th:text="${usuario.nombreusuario}">usuario</span>
-                            </td>
-                            <td>
-                                <span th:text="${usuario.apellidopaterno + ' ' + usuario.apellidomaterno + ', ' + usuario.nombreusuario}">
-                                    Apellido, Nombre
-                                </span>
-                            </td>
-                            <td th:text="${usuario.email}">email@dominio.com</td>
-                            <td th:text="${usuario.telefono}">5512345678</td>
-                            <td>
-                                <span class="role-badge" th:classappend="${usuario.role.id == 1 ? 'badge-admin' : ''}"
-                                      th:text="${usuario.role.nombre}">
-                                    Usuario
-                                </span>
-                            </td>
-                            <td>
-                                <div class="d-flex">
-                                    <!-- Botón Editar -->
-                                    <a th:href="@{/admin/usuarios/editar/{id}(id=${usuario.idusuario})}" 
-                                       class="btn btn-sm btn-outline-primary btn-accion me-1"
-                                       title="Editar usuario">
-                                        <i class="fas fa-edit"></i>
-                                    </a>
-                                    
-                                    <!-- Botón Eliminar (solo admins) -->
-                                    <a th:if="${session.usuario != null and session.usuario.role.id == 1}" 
-                                       th:href="@{/admin/usuarios/eliminar/{id}(id=${usuario.idusuario})}"
-                                       class="btn btn-sm btn-outline-danger btn-accion"
-                                       title="Eliminar usuario"
-                                       onclick="return confirm('¿Estás seguro de eliminar al usuario ' + '${usuario.nombreusuario}' + '?')">
-                                        <i class="fas fa-trash"></i>
-                                    </a>
-                                    
-                                    <!-- Mensaje si no puede eliminar -->
-                                    <span th:if="${session.usuario == null or session.usuario.role.id != 1}" 
-                                          class="text-muted small" style="padding: 8px;">
-                                        <i class="fas fa-lock"></i>
-                                    </span>
+                    <tbody id="tablaUsuarios">
+                        <tr>
+                            <td colspan="7" class="text-center">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Cargando...</span>
                                 </div>
-                            </td>
-                        </tr>
-                        
-                        <!-- Mensaje cuando no hay usuarios -->
-                        <tr th:if="${usuarios == null or usuarios.isEmpty()}">
-                            <td colspan="7" class="text-center py-5">
-                                <i class="fas fa-users-slash fa-3x mb-3" style="color: #94a3b8;"></i>
-                                <h5 style="color: #64748b;">No se encontraron usuarios</h5>
-                                <p class="text-muted">Intenta con otros filtros o <a th:href="@{/registro}">registra un nuevo usuario</a></p>
+                                <p class="mt-2">Cargando usuarios...</p>
                             </td>
                         </tr>
                     </tbody>
                 </table>
             </div>
-            
-            <!-- PAGINACIÓN -->
-            <div class="d-flex justify-content-between align-items-center mt-4" th:if="${totalPaginas > 0}">
-                <div class="paginacion-info">
-                    <i class="fas fa-info-circle me-2"></i>
-                    Mostrando <span th:text="${#lists.size(usuarios)}">0</span> de <span th:text="${totalUsuarios}">0</span> usuarios
+        </div>
+    </div>
+    
+    <div class="modal fade" id="usuarioModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalTitle">
+                        <i class="fas fa-user-plus me-2"></i>
+                        <span id="modalTitleText">Nuevo Usuario</span>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                
-                <nav th:if="${totalPaginas > 1}">
-                    <ul class="pagination mb-0">
-                        <!-- Botón Anterior -->
-                        <li class="page-item" th:classappend="${paginaActual == 1} ? 'disabled'">
-                            <a class="page-link" th:href="@{/admin/usuarios(page=${paginaActual - 1}, buscar=${param.buscar}, rol=${param.rol}, orden=${param.orden})}">
-                                Anterior
-                            </a>
-                        </li>
+                <div class="modal-body">
+                    <form id="usuarioForm">
+                        <input type="hidden" id="usuarioId">
                         
-                        <!-- Números de página -->
-                        <li class="page-item" th:each="i : ${#numbers.sequence(1, totalPaginas)}" 
-                            th:classappend="${i == paginaActual} ? 'active'">
-                            <a class="page-link" th:href="@{/admin/usuarios(page=${i}, buscar=${param.buscar}, rol=${param.rol}, orden=${param.orden})}" 
-                               th:text="${i}">1</a>
-                        </li>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Nombre de Usuario *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-user"></i></span>
+                                    <input type="text" class="form-control" id="nombreusuario" 
+                                           placeholder="Máx. 10 caracteres" maxlength="10" 
+                                           oninput="this.value = this.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '')"
+                                           onblur="validarTexto(this, 'usuario')" required>
+                                </div>
+                                <div id="nombreusuarioError" class="invalid-feedback"></div>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Email *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-envelope"></i></span>
+                                    <input type="email" class="form-control" id="email" 
+                                           placeholder="ejemplo@dominio.com" maxlength="50" 
+                                           oninput="validarEmail(this)" required>
+                                </div>
+                                <div id="emailError" class="invalid-feedback"></div>
+                            </div>
+                        </div>
                         
-                        <!-- Botón Siguiente -->
-                        <li class="page-item" th:classappend="${paginaActual == totalPaginas} ? 'disabled'">
-                            <a class="page-link" th:href="@{/admin/usuarios(page=${paginaActual + 1}, buscar=${param.buscar}, rol=${param.rol}, orden=${param.orden})}">
-                                Siguiente
-                            </a>
-                        </li>
-                    </ul>
-                </nav>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Apellido Paterno *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-user-tag"></i></span>
+                                    <input type="text" class="form-control" id="apellidopaterno" 
+                                           placeholder="Solo letras" maxlength="10" 
+                                           oninput="this.value = this.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '')"
+                                           onblur="validarTexto(this, 'apellido paterno')" required>
+                                </div>
+                                <div id="apellidopaternoError" class="invalid-feedback"></div>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Apellido Materno *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-user-tag"></i></span>
+                                    <input type="text" class="form-control" id="apellidomaterno" 
+                                           placeholder="Solo letras" maxlength="10" 
+                                           oninput="this.value = this.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '')"
+                                           onblur="validarTexto(this, 'apellido materno')" required>
+                                </div>
+                                <div id="apellidomaternoError" class="invalid-feedback"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Teléfono *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-phone"></i></span>
+                                    <input type="tel" class="form-control" id="telefono" 
+                                           placeholder="10 dígitos" maxlength="10" 
+                                           oninput="soloNumeros(event); validarTelefono(this)" required>
+                                </div>
+                                <div id="telefonoError" class="invalid-feedback"></div>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Rol *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-user-tag"></i></span>
+                                    <select class="form-select" id="rol" required>
+                                        <option value="">Seleccionar rol</option>
+                                    </select>
+                                </div>
+                                <div id="rolError" class="invalid-feedback"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="row" id="passwordFields">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Contraseña *</label>
+                                <div class="input-group password-input-group">
+                                    <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                                    <input type="password" class="form-control" id="password" 
+                                           placeholder="Mínimo 4 caracteres" maxlength="10"
+                                           oninput="document.getElementById('confirmPassword').value ? validarPassword('password', 'confirmPassword') : null">
+                                    <span class="toggle-password" onclick="togglePassword('password')">
+                                        <i class="fas fa-eye"></i>
+                                    </span>
+                                </div>
+                                <div id="passwordError" class="invalid-feedback"></div>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Confirmar Contraseña</label>
+                                <div class="input-group password-input-group">
+                                    <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                                    <input type="password" class="form-control" id="confirmPassword" 
+                                           placeholder="Repite la contraseña" maxlength="10"
+                                           oninput="validarPassword('password', 'confirmPassword')">
+                                    <span class="toggle-password" onclick="togglePassword('confirmPassword')">
+                                        <i class="fas fa-eye"></i>
+                                    </span>
+                                </div>
+                                <div id="confirmPasswordError" class="invalid-feedback"></div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>Cancelar
+                    </button>
+                    <button type="button" class="btn btn-primary" onclick="guardarUsuario()">
+                        <i class="fas fa-save me-1"></i>Guardar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="modal fade" id="eliminarModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Confirmar Eliminación
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-center py-4">
+                    <i class="fas fa-user-times fa-4x text-danger mb-3"></i>
+                    <h5>¿Estás seguro de eliminar al usuario?</h5>
+                    <p id="usuarioAEliminar" class="fw-bold text-danger"></p>
+                    <p class="text-muted">Esta acción no se puede deshacer.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>Cancelar
+                    </button>
+                    <button type="button" class="btn btn-danger" onclick="confirmarEliminar()">
+                        <i class="fas fa-trash me-1"></i>Eliminar
+                    </button>
+                </div>
             </div>
         </div>
     </div>
     
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        let usuarioIdEliminar = null;
+        let modalInstance = null;
+        let eliminarModalInstance = null;
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            modalInstance = new bootstrap.Modal(document.getElementById('usuarioModal'));
+            eliminarModalInstance = new bootstrap.Modal(document.getElementById('eliminarModal'));
+            cargarRoles();
+            cargarUsuarios();
+            
+            document.getElementById('filtrarBtn').addEventListener('click', cargarUsuarios);
+            document.getElementById('buscarInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') cargarUsuarios();
+            });
+        });
+        
+        function soloNumeros(e) {
+            const input = e.target;
+            input.value = input.value.replace(/[^0-9]/g, '');
+            if (input.value.length > 10) {
+                input.value = input.value.slice(0, 10);
+            }
+        }
+        
+        function validarTelefono(input) {
+            const telefono = input.value;
+            const errorSpan = document.getElementById('telefonoError');
+            
+            if (telefono.length === 0) {
+                errorSpan.textContent = 'El teléfono es requerido';
+                input.classList.add('is-invalid');
+                input.classList.remove('is-valid');
+                return false;
+            } else if (telefono.length < 10) {
+                errorSpan.textContent = 'El teléfono debe tener 10 dígitos';
+                input.classList.add('is-invalid');
+                input.classList.remove('is-valid');
+                return false;
+            } else if (!/^\d+$/.test(telefono)) {
+                errorSpan.textContent = 'Solo se permiten números';
+                input.classList.add('is-invalid');
+                input.classList.remove('is-valid');
+                return false;
+            } else {
+                errorSpan.textContent = '';
+                input.classList.remove('is-invalid');
+                input.classList.add('is-valid');
+                return true;
+            }
+        }
+        
+        function validarEmail(input) {
+            const email = input.value;
+            const errorSpan = document.getElementById('emailError');
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            
+            if (!email) {
+                errorSpan.textContent = 'El email es requerido';
+                input.classList.add('is-invalid');
+                input.classList.remove('is-valid');
+                return false;
+            } else if (!emailRegex.test(email)) {
+                errorSpan.textContent = 'Ingresa un email válido (ejemplo@dominio.com)';
+                input.classList.add('is-invalid');
+                input.classList.remove('is-valid');
+                return false;
+            } else {
+                errorSpan.textContent = '';
+                input.classList.remove('is-invalid');
+                input.classList.add('is-valid');
+                return true;
+            }
+        }
+        
+        function validarTexto(input, campo) {
+            const valor = input.value;
+            const errorSpan = document.getElementById(input.id + 'Error');
+            
+            if (!valor) {
+                errorSpan.textContent = `El ${campo} es requerido`;
+                input.classList.add('is-invalid');
+                input.classList.remove('is-valid');
+                return false;
+            } else if (valor.length < 3) {
+                errorSpan.textContent = `El ${campo} debe tener al menos 3 caracteres`;
+                input.classList.add('is-invalid');
+                input.classList.remove('is-valid');
+                return false;
+            } else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(valor)) {
+                errorSpan.textContent = 'Solo se permiten letras';
+                input.classList.add('is-invalid');
+                input.classList.remove('is-valid');
+                return false;
+            } else {
+                errorSpan.textContent = '';
+                input.classList.remove('is-invalid');
+                input.classList.add('is-valid');
+                return true;
+            }
+        }
+        
+        function validarPassword(passwordId, confirmId) {
+            const passwordInput = document.getElementById(passwordId);
+            const confirmInput = document.getElementById(confirmId);
+            const errorSpan = document.getElementById('passwordError');
+            const confirmErrorSpan = document.getElementById('confirmPasswordError');
+            
+            if (!passwordInput.value) {
+                errorSpan.textContent = 'La contraseña es requerida';
+                passwordInput.classList.add('is-invalid');
+                return false;
+            } else if (passwordInput.value.length < 4) {
+                errorSpan.textContent = 'La contraseña debe tener al menos 4 caracteres';
+                passwordInput.classList.add('is-invalid');
+                return false;
+            } else if (passwordInput.value !== confirmInput.value) {
+                errorSpan.textContent = 'Las contraseñas no coinciden';
+                confirmErrorSpan.textContent = 'Las contraseñas no coinciden';
+                passwordInput.classList.add('is-invalid');
+                confirmInput.classList.add('is-invalid');
+                return false;
+            } else {
+                errorSpan.textContent = '';
+                confirmErrorSpan.textContent = '';
+                passwordInput.classList.remove('is-invalid');
+                confirmInput.classList.remove('is-invalid');
+                passwordInput.classList.add('is-valid');
+                confirmInput.classList.add('is-valid');
+                return true;
+            }
+        }
+        
+        function cargarRoles() {
+            fetch('/api/roles')
+                .then(response => response.json())
+                .then(data => {
+                    const rolSelect = document.getElementById('rolSelect');
+                    const rolModalSelect = document.getElementById('rol');
+                    
+                    rolSelect.innerHTML = '<option value="">Todos los roles</option>';
+                    rolModalSelect.innerHTML = '<option value="">Seleccionar rol</option>';
+                    
+                    if (data.data) {
+                        data.data.forEach(rol => {
+                            rolSelect.innerHTML += `<option value="${rol.id}">${rol.nombre}</option>`;
+                            rolModalSelect.innerHTML += `<option value="${rol.id}">${rol.nombre}</option>`;
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error al cargar roles:', error);
+                });
+        }
+        
+        function cargarUsuarios() {
+            const buscar = document.getElementById('buscarInput').value;
+            const rol = document.getElementById('rolSelect').value;
+            
+            let url = '/api/usuarios/buscar?';
+            if (buscar) url += 'query=' + encodeURIComponent(buscar) + '&';
+            if (rol) url += 'rolId=' + rol + '&';
+            
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    if (data && data.data) {
+                        mostrarUsuarios(data.data);
+                        document.getElementById('totalCount').textContent = data.Total || data.data.length;
+                    } else {
+                        mostrarUsuarios([]);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    document.getElementById('tablaUsuarios').innerHTML = 
+                        '<tr><td colspan="7" class="text-center text-danger">Error al cargar usuarios</td></tr>';
+                });
+        }
+        
+        function mostrarUsuarios(usuarios) {
+            const tbody = document.getElementById('tablaUsuarios');
+            
+            if (!usuarios || usuarios.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="text-center py-5">
+                            <i class="fas fa-users-slash fa-3x mb-3" style="color: #94a3b8;"></i>
+                            <h5 style="color: #64748b;">No se encontraron usuarios</h5>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            let html = '';
+            usuarios.forEach(u => {
+                const rolClass = u.role && u.role.id === 1 ? 'badge-admin' : '';
+                const rolNombre = u.role ? u.role.nombre : 'Usuario';
+                
+                html += `
+                    <tr>
+                        <td class="fw-bold">${u.idusuario}</td>
+                        <td><i class="fas fa-user-circle me-2" style="color: #4f46e5;"></i>${u.nombreusuario || ''}</td>
+                        <td>${u.apellidopaterno || ''} ${u.apellidomaterno || ''}</td>
+                        <td>${u.email || ''}</td>
+                        <td>${u.telefono || ''}</td>
+                        <td><span class="role-badge ${rolClass}">${rolNombre}</span></td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary btn-accion me-1" 
+                                    onclick="abrirModalEditar(${u.idusuario})" title="Editar">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger btn-accion" 
+                                    onclick="abrirModalEliminar(${u.idusuario}, '${u.nombreusuario}')" title="Eliminar">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            tbody.innerHTML = html;
+        }
+        
+        function abrirModalNuevo() {
+            document.getElementById('modalTitleText').textContent = 'Nuevo Usuario';
+            document.getElementById('usuarioForm').reset();
+            document.getElementById('usuarioId').value = '';
+            document.getElementById('password').required = true;
+            document.getElementById('confirmPassword').required = true;
+            document.getElementById('passwordFields').style.display = 'flex';
+            
+            document.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+            document.querySelectorAll('.is-valid').forEach(el => el.classList.remove('is-valid'));
+            document.querySelectorAll('.invalid-feedback').forEach(el => el.textContent = '');
+            
+            modalInstance.show();
+        }
+        
+        function abrirModalEditar(id) {
+            document.getElementById('modalTitleText').textContent = 'Editar Usuario';
+            document.getElementById('password').required = false;
+            document.getElementById('confirmPassword').required = false;
+            document.getElementById('passwordFields').style.display = 'none';
+            
+            document.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+            document.querySelectorAll('.is-valid').forEach(el => el.classList.remove('is-valid'));
+            document.querySelectorAll('.invalid-feedback').forEach(el => el.textContent = '');
+            
+            fetch(`/api/usuario/${id}`)
+                .then(response => response.json())
+                .then(usuario => {
+                    document.getElementById('usuarioId').value = usuario.idusuario;
+                    document.getElementById('nombreusuario').value = usuario.nombreusuario;
+                    document.getElementById('apellidopaterno').value = usuario.apellidopaterno;
+                    document.getElementById('apellidomaterno').value = usuario.apellidomaterno;
+                    document.getElementById('email').value = usuario.email;
+                    document.getElementById('telefono').value = usuario.telefono;
+                    document.getElementById('rol').value = usuario.role ? usuario.role.id : '';
+                    
+                    modalInstance.show();
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error al cargar el usuario');
+                });
+        }
+        
+        function guardarUsuario() {
+            const id = document.getElementById('usuarioId').value;
+            const esNuevo = !id;
+            
+            document.querySelectorAll('.invalid-feedback').forEach(el => el.textContent = '');
+            document.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+            
+            const nombreValido = validarTexto(document.getElementById('nombreusuario'), 'usuario');
+            const apellidoPaternoValido = validarTexto(document.getElementById('apellidopaterno'), 'apellido paterno');
+            const apellidoMaternoValido = validarTexto(document.getElementById('apellidomaterno'), 'apellido materno');
+            const emailValido = validarEmail(document.getElementById('email'));
+            const telefonoValido = validarTelefono(document.getElementById('telefono'));
+            
+            const rolSelect = document.getElementById('rol');
+            const rolError = document.getElementById('rolError');
+            if (!rolSelect.value) {
+                rolError.textContent = 'Selecciona un rol';
+                rolSelect.classList.add('is-invalid');
+                return;
+            } else {
+                rolError.textContent = '';
+                rolSelect.classList.remove('is-invalid');
+                rolSelect.classList.add('is-valid');
+            }
+            
+            let passwordValido = true;
+            if (esNuevo) {
+                passwordValido = validarPassword('password', 'confirmPassword');
+            }
+            
+            if (!nombreValido || !apellidoPaternoValido || !apellidoMaternoValido || 
+                !emailValido || !telefonoValido || !passwordValido) {
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('nombre', document.getElementById('nombreusuario').value);
+            formData.append('apellidopaterno', document.getElementById('apellidopaterno').value);
+            formData.append('apellidomaterno', document.getElementById('apellidomaterno').value);
+            formData.append('email', document.getElementById('email').value);
+            formData.append('telefono', document.getElementById('telefono').value);
+            
+            if (!esNuevo) {
+                formData.append('idusuario', id);
+            }
+            
+            if (esNuevo) {
+                formData.append('password', document.getElementById('password').value);
+            }
+            
+            formData.append('g-recaptcha-response', 'no-captcha');
+            
+            fetch('/api/registro', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    modalInstance.hide();
+                    cargarUsuarios();
+                    alert(esNuevo ? 'Usuario creado correctamente' : 'Usuario actualizado correctamente');
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error al guardar el usuario');
+            });
+        }
+        
+        function abrirModalEliminar(id, nombre) {
+            usuarioIdEliminar = id;
+            document.getElementById('usuarioAEliminar').textContent = nombre;
+            eliminarModalInstance.show();
+        }
+        
+        function confirmarEliminar() {
+            if (!usuarioIdEliminar) return;
+            
+            fetch(`/api/usuarios/${usuarioIdEliminar}`, {
+                method: 'DELETE'
+            })
+            .then(response => response.json())
+            .then(data => {
+                eliminarModalInstance.hide();
+                if (data.success) {
+                    cargarUsuarios();
+                    alert('Usuario eliminado correctamente');
+                } else {
+                    alert('Error al eliminar usuario');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error al eliminar usuario');
+            });
+        }
+        
+        function togglePassword(inputId) {
+            const input = document.getElementById(inputId);
+            const icon = input.parentElement.querySelector('.toggle-password i');
+            
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        }
+    </script>
 </body>
 </html>

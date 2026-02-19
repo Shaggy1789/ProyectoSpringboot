@@ -1,5 +1,6 @@
 package com.master.springboot.Models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
@@ -18,5 +19,6 @@ public class Roles {
     private String nombre;
 
     @OneToMany
+    @JsonIgnore
     private List<Usuarios> usuarios;
 }

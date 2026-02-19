@@ -17,5 +17,4 @@ public class RolesController {
         return serviceRoles.findAll();
     }
 
-
 }

@@ -23,4 +23,8 @@ public class Usuarios {
     @ManyToOne
     @JoinColumn(name = "roles")
     private Roles role;
+
+    public Roles getRole() {
+        return role;
+    }
 }

@@ -8,7 +8,6 @@ import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -25,8 +24,6 @@ public class LoginController {
     @Autowired
     private AuthCaptchaService authCaptchaService;
 
-    // ========== MÉTODOS POST (PARA PROCESAR FORMULARIOS) ==========
-
     @PostMapping("/login")
     public ResponseEntity<?> procesarLogin(
             @RequestParam String nombreusuario,
@@ -36,48 +33,28 @@ public class LoginController {
 
         Map<String, Object> response = new HashMap<>();
 
-        System.out.println("=== PROCESANDO LOGIN ===");
-        System.out.println("Usuario: " + nombreusuario);
-        System.out.println("Password: " + password);
-        System.out.println("Token CAPTCHA length: " + (recaptchaResponse != null ? recaptchaResponse.length() : 0));
-
-        // Validar CAPTCHA
         if (!authCaptchaService.verifyRecaptcha(recaptchaResponse)) {
-            System.out.println("❌ CAPTCHA inválido");
             response.put("success", false);
             response.put("message", "Error en el inicio de sesión");
             response.put("error", "captcha");
             return ResponseEntity.badRequest().body(response);
         }
-        System.out.println("✅ CAPTCHA válido");
 
-        // Buscar usuario
         List<Usuarios> usuarios = serviceUsuarios.findAll();
-        System.out.println("Total usuarios en BD: " + usuarios.size());
 
         for (Usuarios usuario : usuarios) {
-            System.out.println("Comparando con: " + usuario.getNombreusuario());
-
             if (usuario.getNombreusuario().equals(nombreusuario)) {
-                System.out.println("✓ Usuario encontrado");
-
                 String hashedPassword = md5(password);
-                System.out.println("Hash ingresado: " + hashedPassword);
-                System.out.println("Hash en BD: " + usuario.getPassword());
 
                 if (usuario.getPassword() != null &&
                         usuario.getPassword().equals(hashedPassword)) {
 
-                    System.out.println("✓ Contraseña correcta");
-
-                    // Guardar usuario en sesión
                     session.setAttribute("usuario", usuario);
 
                     response.put("success", true);
                     response.put("message", "Login exitoso");
                     response.put("redirect", "/");
 
-                    // Devolver solo datos básicos del usuario
                     Map<String, Object> datosUsuario = new HashMap<>();
                     datosUsuario.put("id", usuario.getIdusuario());
                     datosUsuario.put("nombre", usuario.getNombreusuario());
@@ -86,7 +63,6 @@ public class LoginController {
 
                     return ResponseEntity.ok(response);
                 } else {
-                    System.out.println("❌ Contraseña incorrecta");
                     response.put("success", false);
                     response.put("message", "Error en el inicio de sesión");
                     response.put("error", "password");
@@ -95,7 +71,6 @@ public class LoginController {
             }
         }
 
-        System.out.println("❌ Usuario no encontrado");
         response.put("success", false);
         response.put("message", "Error en el inicio de sesión");
         response.put("error", "usuario");
@@ -104,73 +79,95 @@ public class LoginController {
 
     @PostMapping("/registro")
     public ResponseEntity<?> procesarRegistro(
+            @RequestParam(required = false) Integer idusuario,
             @RequestParam String nombre,
             @RequestParam String apellidopaterno,
             @RequestParam String apellidomaterno,
             @RequestParam String email,
-            @RequestParam String password,
+            @RequestParam(required = false) String password,
             @RequestParam long telefono,
-            @RequestParam("g-recaptcha-response") String recaptchaResponse) {
+            @RequestParam(value = "g-recaptcha-response", required = false) String recaptchaResponse) {
 
         Map<String, Object> response = new HashMap<>();
 
-        System.out.println("\n=== PROCESANDO REGISTRO ===");
-        System.out.println("Token recibido en controller (primeros 50): " +
-                (recaptchaResponse != null ? recaptchaResponse.substring(0, Math.min(50, recaptchaResponse.length())) : "null"));
-        System.out.println("Longitud token: " + (recaptchaResponse != null ? recaptchaResponse.length() : 0));
+        if (idusuario != null && idusuario > 0) {
+            try {
+                Usuarios usuarioExistente = serviceUsuarios.findById(idusuario);
+                if (usuarioExistente == null) {
+                    response.put("success", false);
+                    response.put("message", "Usuario no encontrado");
+                    return ResponseEntity.badRequest().body(response);
+                }
 
-        // Validar CAPTCHA
-        boolean captchaValido = authCaptchaService.verifyRecaptcha(recaptchaResponse);
-        System.out.println("Resultado validación CAPTCHA: " + captchaValido);
+                usuarioExistente.setNombreusuario(nombre);
+                usuarioExistente.setApellidopaterno(apellidopaterno);
+                usuarioExistente.setApellidomaterno(apellidomaterno);
+                usuarioExistente.setEmail(email);
+                usuarioExistente.setTelefono(telefono);
 
-        if (!captchaValido) {
-            response.put("success", false);
-            response.put("message", "CAPTCHA inválido, por favor trata de nuevo");
-            response.put("error", "captcha");
-            return ResponseEntity.badRequest().body(response);
-        }
+                if (password != null && !password.isEmpty()) {
+                    usuarioExistente.setPassword(md5(password));
+                }
 
-        // Verificar si el usuario ya existe
-        List<Usuarios> usuarios = serviceUsuarios.findAll();
-        for (Usuarios usuario : usuarios) {
-            if (usuario.getNombreusuario().equals(nombre)) {
+                serviceUsuarios.save(usuarioExistente);
+
+                response.put("success", true);
+                response.put("message", "Usuario actualizado correctamente");
+                return ResponseEntity.ok(response);
+
+            } catch (Exception e) {
+                e.printStackTrace();
                 response.put("success", false);
-                response.put("message", "El usuario ya existe");
-                response.put("error", "usuario_existente");
+                response.put("message", "Error al actualizar: " + e.getMessage());
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+            }
+        } else {
+            if (!authCaptchaService.verifyRecaptcha(recaptchaResponse)) {
+                response.put("success", false);
+                response.put("message", "CAPTCHA inválido, por favor trata de nuevo");
+                response.put("error", "captcha");
                 return ResponseEntity.badRequest().body(response);
             }
-        }
 
-        try {
-            Usuarios nuevoUsuario = new Usuarios();
+            List<Usuarios> usuarios = serviceUsuarios.findAll();
+            for (Usuarios usuario : usuarios) {
+                if (usuario.getNombreusuario().equals(nombre)) {
+                    response.put("success", false);
+                    response.put("message", "El usuario ya existe");
+                    response.put("error", "usuario_existente");
+                    return ResponseEntity.badRequest().body(response);
+                }
+            }
 
-            nuevoUsuario.setNombreusuario(nombre);
-            nuevoUsuario.setApellidopaterno(apellidopaterno);
-            nuevoUsuario.setApellidomaterno(apellidomaterno);
-            nuevoUsuario.setEmail(email);
-            nuevoUsuario.setPassword(md5(password));
-            nuevoUsuario.setTelefono(telefono);
+            try {
+                Usuarios nuevoUsuario = new Usuarios();
+                nuevoUsuario.setNombreusuario(nombre);
+                nuevoUsuario.setApellidopaterno(apellidopaterno);
+                nuevoUsuario.setApellidomaterno(apellidomaterno);
+                nuevoUsuario.setEmail(email);
+                nuevoUsuario.setPassword(md5(password));
+                nuevoUsuario.setTelefono(telefono);
 
-            Roles role = new Roles();
-            role.setId(3);
-            role.setNombre("Usuario");
-            nuevoUsuario.setRole(role);
+                Roles role = new Roles();
+                role.setId(3);
+                role.setNombre("Usuario");
+                nuevoUsuario.setRole(role);
 
-            // Guardar el usuario
-            serviceUsuarios.save(nuevoUsuario);
+                serviceUsuarios.save(nuevoUsuario);
 
-            response.put("success", true);
-            response.put("message", "¡Registro exitoso! Ahora puedes iniciar sesión.");
-            response.put("redirect", "/login");
-            response.put("registro", "exitoso");
-            response.put("usuario", nombre);
-            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+                response.put("success", true);
+                response.put("message", "¡Registro exitoso! Ahora puedes iniciar sesión.");
+                response.put("redirect", "/login");
+                response.put("registro", "exitoso");
+                response.put("usuario", nombre);
+                return ResponseEntity.status(HttpStatus.CREATED).body(response);
 
-        } catch (Exception e) {
-            e.printStackTrace();
-            response.put("success", false);
-            response.put("message", "Error al registrar: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+            } catch (Exception e) {
+                e.printStackTrace();
+                response.put("success", false);
+                response.put("message", "Error al registrar: " + e.getMessage());
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+            }
         }
     }
 
@@ -201,8 +198,6 @@ public class LoginController {
         }
         return ResponseEntity.ok(response);
     }
-
-    // ========== MÉTODO AUXILIAR ==========
 
     private String md5(String input) {
         try {

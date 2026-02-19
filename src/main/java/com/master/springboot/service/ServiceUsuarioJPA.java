@@ -28,4 +28,8 @@ public  class ServiceUsuarioJPA implements ServiceUsuarios {
         return usuariosRepository.save(nuevoUsuario);
     }
 
+    @Override
+    public void delete(int id) {
+        usuariosRepository.deleteById(id);
+    }
 }

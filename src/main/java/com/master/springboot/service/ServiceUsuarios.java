@@ -10,6 +10,7 @@ public interface ServiceUsuarios {
     public List<Usuarios> findAll();
     public Usuarios findById(int id);
     public Usuarios save(Usuarios nuevoUsuario);
+    public void delete(int id);
 
     //public List<Usuarios> findByNombre(String nombre);
 }
